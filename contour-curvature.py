@@ -5,6 +5,9 @@ from scipy.spatial import cKDTree as kdtree
 from tqdm import trange
 
 
+# size of pixels for comparable gradient computations between resolutions
+pixel_size = 0.5
+
 print("create random blobs")
 shape = 10 * np.array((108, 192))
 noise = np.random.normal(size=shape)
@@ -88,10 +91,10 @@ for li in trange(1, int(np.nanmax(label)) + 1):
     ye = ndi.gaussian_filter1d(ye.astype("float"), sigma=2)
 
     # https://en.wikipedia.org/wiki/Curvature#In_terms_of_a_general_parametrization
-    dx = np.gradient(xe)
-    dy = np.gradient(ye)
-    ddx = np.gradient(dx)
-    ddy = np.gradient(dy)
+    dx = np.gradient(xe, pixel_size)
+    dy = np.gradient(ye, pixel_size)
+    ddx = np.gradient(dx, pixel_size)
+    ddy = np.gradient(dy, pixel_size)
     dx = dx[1:-1]
     dy = dy[1:-1]
     ddx = ddx[1:-1]
