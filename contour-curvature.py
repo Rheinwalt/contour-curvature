@@ -2,7 +2,7 @@ import numpy as np
 import scipy.ndimage as ndi
 from matplotlib import pyplot as pl
 from scipy.spatial import cKDTree as kdtree
-from tqdm import trange
+from tqdm import tqdm
 
 
 # size of pixels for comparable gradient computations between resolutions
@@ -29,9 +29,12 @@ crv_label = np.ones(label.shape) * np.nan
 cy, cx = np.nonzero(~np.isnan(contour_label))
 cl = contour_label[cy, cx]
 
-for li in trange(1, int(np.nanmax(label)) + 1):
+for li in tqdm(np.unique(cl)):
     # vectorize contour li
     i = np.where(cl == li)[0]
+    if len(i) < 10:
+        # no curvature for small polygons
+        continue
     y, x = cy[i], cx[i]
     pt = np.c_[x, y]
     tr = kdtree(pt)
@@ -87,8 +90,8 @@ for li in trange(1, int(np.nanmax(label)) + 1):
         xe, ye = xe[::-1], ye[::-1]
 
     # smooth x,y coords for a more non-local curvature
-    xe = ndi.gaussian_filter1d(xe.astype("float"), sigma=2)
-    ye = ndi.gaussian_filter1d(ye.astype("float"), sigma=2)
+    xe = ndi.gaussian_filter1d(xe.astype("float"), sigma=3)
+    ye = ndi.gaussian_filter1d(ye.astype("float"), sigma=3)
 
     # https://en.wikipedia.org/wiki/Curvature#In_terms_of_a_general_parametrization
     dx = np.gradient(xe, pixel_size)
