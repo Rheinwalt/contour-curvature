@@ -60,9 +60,10 @@ for li in tqdm(np.unique(cl)):
     j = np.argmin(y[x == x.min()])
     jr = np.arange(len(x))[x == x.min()]
     j = jr[j]
-    xe = np.concat(([x[-2], x[-1]], x, [x[0], x[1]]))
-    ye = np.concat(([y[-2], y[-1]], y, [y[0], y[1]]))
-    j += 2
+    xe = np.tile(x, 3)
+    ye = np.tile(y, 3)
+    plen = len(x)
+    j += plen
     det = ((xe[j] - xe[j - 1]) * (ye[j + 1] - ye[j - 1])) - (
         (xe[j + 1] - xe[j - 1]) * (ye[j] - ye[j - 1])
     )
@@ -78,10 +79,10 @@ for li in tqdm(np.unique(cl)):
     dy = np.gradient(ye, pixel_size)
     ddx = np.gradient(dx, pixel_size)
     ddy = np.gradient(dy, pixel_size)
-    dx = dx[2:-2]
-    dy = dy[2:-2]
-    ddx = ddx[2:-2]
-    ddy = ddy[2:-2]
+    dx = dx[plen:-plen]
+    dy = dy[plen:-plen]
+    ddx = ddx[plen:-plen]
+    ddy = ddy[plen:-plen]
     crv = (dx * ddy - dy * ddx) / np.sqrt((dx * dx + dy * dy) ** 3)
 
     # write into image
