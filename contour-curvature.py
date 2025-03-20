@@ -69,6 +69,7 @@ for li in tqdm(np.unique(cl)):
     )
     if det > 0:
         xe, ye = xe[::-1], ye[::-1]
+        x, y = x[::-1], y[::-1]
 
     # smooth x,y coords for a more non-local curvature
     xe = ndi.gaussian_filter1d(xe.astype("float"), sigma=3)
