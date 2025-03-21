@@ -22,7 +22,8 @@ label[label == 0] = np.nan
 
 print("find contours")
 contour_label = label.copy()
-contour_label[ndi.binary_erosion(~np.isnan(label))] = np.nan
+for ul in tqdm(np.unique(label[~np.isnan(label)])):
+    contour_label[ndi.binary_erosion(label == ul)] = np.nan
 
 print("compute contour curvature")
 crv_label = np.ones(label.shape) * np.nan
