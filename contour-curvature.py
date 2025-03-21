@@ -1,7 +1,7 @@
+import cv2
 import numpy as np
 import scipy.ndimage as ndi
 from matplotlib import pyplot as pl
-from scipy.spatial import cKDTree as kdtree
 from tqdm import tqdm
 
 
@@ -20,57 +20,19 @@ label, _ = ndi.label(binar)
 label = label.astype("float")
 label[label == 0] = np.nan
 
-print("find contours")
-contour_label = label.copy()
-for ul in tqdm(np.unique(label[~np.isnan(label)])):
-    contour_label[ndi.binary_erosion(label == ul)] = np.nan
-
-print("compute contour curvature")
+print("compute contours and their curvature")
 crv_label = np.ones(label.shape) * np.nan
-cy, cx = np.nonzero(~np.isnan(contour_label))
-cl = contour_label[cy, cx]
+ul = np.unique(label[~np.isnan(label)])
 
-for li in tqdm(np.unique(cl)):
-    # vectorize contour li
-    i = np.where(cl == li)[0]
-    if len(i) < 10:
-        # no curvature for small polygons
-        continue
-    y, x = cy[i], cx[i]
-    pt = np.c_[x, y]
-    tr = kdtree(pt)
-    k = 4
-    _, ii = tr.query(pt, k=k, workers=-1)
-    ir = [
-        ii[0, 1],
-    ]
-    queue = [
-        ii[0, 0],
-    ]
-    while len(queue):
-        i = queue.pop(0)
-        for j in range(k):
-            if ii[i, j] not in ir:
-                queue.append(ii[i, j])
-                ir.append(ii[i, j])
-                break
-
-    x, y = x[ir], y[ir]
-
-    # fix orientation of contour polygon
-    j = np.argmin(y[x == x.min()])
-    jr = np.arange(len(x))[x == x.min()]
-    j = jr[j]
+for li in tqdm(ul):
+    # use opencv to find contour polygon
+    contours, _ = cv2.findContours((label == li).astype("uint8"), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    contour = contours[0]
+    contour = contour.reshape(-1, 2)
+    x, y = contour[:, 0], contour[:, 1]
     xe = np.tile(x, 3)
     ye = np.tile(y, 3)
     plen = len(x)
-    j += plen
-    det = ((xe[j] - xe[j - 1]) * (ye[j + 1] - ye[j - 1])) - (
-        (xe[j + 1] - xe[j - 1]) * (ye[j] - ye[j - 1])
-    )
-    if det > 0:
-        xe, ye = xe[::-1], ye[::-1]
-        x, y = x[::-1], y[::-1]
 
     # smooth x,y coords for a more non-local curvature
     xe = ndi.gaussian_filter1d(xe.astype("float"), sigma=3)
